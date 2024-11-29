@@ -1,0 +1,39 @@
+1. Якою є назва орагізації що видала чинний сертифікат для сайту robotdreams.cc?
+      Google Trust Services LLC
+2. Який сертифікат з ланцюга має найдовший термін дії?
+      robotdream.cc
+              Validity
+                  Not Before: Oct  8 05:05:37 2024 GMT
+                  Not After : Jan  6 05:05:36 2025 GMT
+        (~4 month)
+      google LLC
+         Validity
+                  Not Before: Dec 13 09:00:00 2023 GMT
+                  Not After : Feb 20 14:00:00 2029 GMT
+         (aprox. 5-6 years, 1,506 Days)
+      google LLC GlobalSign nv-sa
+              Validity
+                  Not Before: Nov 15 03:43:21 2023 GMT
+                  Not After : Jan 28 00:00:42 2028 GMT
+        (aprox. 6 years, 1,535 Days)
+
+global root cert have the biggest TTL
+
+3. Дослідивши детальніше сертифікат виданий robotdreams.cc можна знайти деталі про ключ,
+який використовується сервером robotdreams.cc для автентифікації сервера.
+Який розмір ключа (в бітах) та яка еліптична крива була використана для формування ключа robotdreams.cc?
+
+     Subject Public Key Info:
+                Public Key Algorithm: id-ecPublicKey
+                    Public-Key: (256 bit)
+                    pub:
+                        04:67:1c:5c:7d:fd:13:82:9c:6c:09:63:c4:e7:02:
+                        52:00:d4:3e:c1:4c:be:35:79:12:43:3f:62:8e:1a:
+                        59:e2:c9:6b:84:7b:68:78:04:0c:3d:ba:b5:21:2e:
+                        4b:79:e5:d8:53:04:c6:39:1d:5f:03:e9:1f:16:15:
+                        e9:91:de:73:50
+                    ASN1 OID: prime256v1
+                    NIST CURVE: P-256
+
+
+Була використана крива P-256 v1 розміром 256 біт
