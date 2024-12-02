@@ -1,0 +1,8 @@
+[user]
+    signingkey =./homework10/key_task1
+
+[gpg]
+    format = ssh
+
+[gpg "ssh"]
+    allowedSignersFile = ./homework10/task3/allowed_signers

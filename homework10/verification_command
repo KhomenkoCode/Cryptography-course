@@ -1,0 +1,1 @@
+ssh-keygen -Y verify -f allowed_signers -I ruslan.kiyanchuk@gmail.com -n robot_dreams -s lector_sign < image.png > verification_command_result
