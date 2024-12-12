@@ -7,13 +7,16 @@ from algorithms_core import *
 max_len = 1024
 divider = "|||"
 my_dhdr = None
+nonce = 0
 
 async def receive(reader):
     global max_len
     global divider
+    global nonce
+
     """Receive data from other party"""
     while True:
-        # Receive data from Alice (can be multiple messages)
+        # Receive data from  (can be multiple messages)
 
         data = await reader.read(max_len)
 
@@ -24,12 +27,18 @@ async def receive(reader):
         # print(data)
         data = data.split(divider)
 
-        if len(data) != 3:
+        if len(data) != 4:
             break
 
         encrypted_message = data[0]
         pub_key_str = data[1]
-        signature = data[2]
+        nonce_received = int(data[2])
+        signature = data[3]
+
+        if nonce_received != nonce + 1:
+            break
+
+        nonce = nonce_received
 
         # print(f"encrypted_message {encrypted_message}")
         # print(f"pub_key {pub_key_str}")
@@ -41,7 +50,7 @@ async def receive(reader):
 
         decrypted_message = AES_pkcs5(shared_key).decrypt(encrypted_message)
 
-        if not validate_hmac_sha256(decrypted_message+pub_key_str,shared_key, signature):
+        if not validate_hmac_sha256(decrypted_message + pub_key_str + str(nonce_received), shared_key, signature):
             show("ERROR, signature not valid")
             break
 
@@ -53,9 +62,13 @@ async def receive(reader):
 
 
 async def send(writer):
+    global divider
+    global nonce
     """Send data to other party"""
     while True:
+
         message = await read_message_from_stdin()
+        nonce = nonce + 1
 
         # {ENCRYPT HERE}
         shared_key = my_dhdr.get_output_ratchet_key()
@@ -65,13 +78,12 @@ async def send(writer):
         message = message.strip()
         encrypted_message = AES_pkcs5(shared_key).encrypt(message)
 
-        signature = sign_hmac_sha256(message + pub_key_str, shared_key)
+        signature = sign_hmac_sha256(message + pub_key_str + str(nonce), shared_key)
 
         # Send message
-        writer.write(f"{encrypted_message}{divider}{pub_key_str}{divider}{signature}".encode())
-        await writer.drain()
-
+        writer.write(f"{encrypted_message}{divider}{pub_key_str}{divider}{nonce}{divider}{signature}".encode())
         prompt()
+        await writer.drain()
 
 
 
