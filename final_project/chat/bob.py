@@ -5,25 +5,45 @@ from algorithms_core import *
 
 
 max_len = 1024
-shared_key = None
+my_dhdr = None
 
 async def receive(reader):
     """Receive data from other party"""
     while True:
         # Receive data from Alice (can be multiple messages)
+        global max_len
+
         data = await reader.read(max_len)
-        if not data:
+        print("1")
+        print(f"{data.decode()}")
+        pub_key = await reader.read(max_len)
+        print("2")
+        signature = await reader.read(max_len)
+        print("3")
+        if not data or not pub_key or not signature:
             break
+        print("4")
 
+        # pub_key = pub_key.decode()
         message = data.decode()
+        signature = signature.decode()
+        pub_key = create_X22519PubKey_form_str(pub_key)
+        print("5")
 
-        # {DECRYPT HERE}
+        shared_key = my_dhdr.get_input_ratchet_key(pub_key)
 
         decrypted_message = AES_pkcs5(shared_key).decrypt(message)
+        print("6")
 
+        if not validate_hmac_sha256(decrypted_message+pub_key,shared_key, signature):
+            show("ERROR, signature not valid")
+            break
+        print("7")
 
         show(decrypted_message)
+
         prompt()
+    show("ERROR, stopped listening")
 
 
 async def send(writer):
@@ -32,15 +52,22 @@ async def send(writer):
         message = await read_message_from_stdin()
 
         # {ENCRYPT HERE}
+        shared_key = my_dhdr.get_output_ratchet_key()
+        pub_key_to_send = my_dhdr.get_current_public_key_to_send()
+        pub_key_str = pub_key_into_str(pub_key_to_send)
+
+        message = message.strip()
         encrypted_message = AES_pkcs5(shared_key).encrypt(message)
 
-        data = encrypted_message.strip().encode()
+        signature = sign_hmac_sha256(message + pub_key_str, shared_key)
 
         # Send message
-        writer.write(data)
+        writer.write(encrypted_message.encode())
+        writer.write(pub_key_str.encode())
+        writer.write(signature.encode())
+        await writer.drain()
 
         prompt()
-        await writer.drain()
 
 
 
@@ -49,19 +76,26 @@ async def init_connection():
     print("Connected to Alice!")
     prompt()
 
+    # INITIAL EXCHANGE HERE
+    # initial DH key exchange
     init_pkey = generate_ec225519_private_key()
     init_pubkey = init_pkey.public_key()
-    writer.write(pub_key_into_str(init_pubkey).encode())
 
-    received_pubkey_str = await reader.read(max_len)
+    writer.write(pub_key_into_str(init_pubkey).encode()) # send my pub key
+    received_pubkey_str = await reader.read(max_len) # receive pub key
 
+    # deserialize PubKey
     received_pubkey = create_X22519PubKey_form_str(received_pubkey_str)
 
-    global shared_key
-    shared_key = finalize_ec_key(init_pkey, received_pubkey)
+    # exchange constants for a I/O ratchet
+    output_ratchet_const = uuid.uuid4().hex
+    writer.write(output_ratchet_const.encode()) # send my output const
+    input_ratchet_const = await reader.read(max_len) # receive input const
+    input_ratchet_const = input_ratchet_const.decode()
 
-
-    # INITIAL EXCHANGE HERE
+    # init Diffie-Hellman Double Ratchet
+    global my_dhdr
+    my_dhdr = DiffieHellmanDoubleRatchet(init_pkey, received_pubkey, input_ratchet_const, output_ratchet_const)
 
     await asyncio.gather(receive(reader), send(writer))
 

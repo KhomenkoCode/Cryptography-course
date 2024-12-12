@@ -10,3 +10,6 @@
 
 KDFs
 ● HMAC-SHA-256
+
+Key Rotation:
+Diffie-Hellman Double Ratchet
