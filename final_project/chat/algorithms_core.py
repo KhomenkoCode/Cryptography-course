@@ -29,7 +29,9 @@ def sign_hmac_sha256(message, key):
 
 
 def validate_hmac_sha256(message, key, sign):
-  return sign_hmac_sha256(message, key) == sign
+  signature_calculated = sign_hmac_sha256(message, key)
+  # print(f"{signature_calculated} == {sign} is {signature_calculated == sign}")
+  return signature_calculated == sign
 
 
 def pub_key_into_str(ec_public_key):
@@ -90,7 +92,7 @@ class AES_pkcs5:
     # base64 decode
     message = base64.b64decode(byte_array)
     # AES instance with the - setKey()
-    cipher= AES.new(self.key, AES.MODE_ECB)
+    cipher = AES.new(self.key, AES.MODE_ECB)
     # decrypt and decode
     decrypted = cipher.decrypt(message).decode('utf-8')
     # unpad - with pkcs5 style and return
@@ -180,8 +182,8 @@ class DiffieHellmanDoubleRatchet:
 #
 # alice_initPK = generate_ec225519_private_key()
 #
-# bob_initPK = generate_ec225519_private_key()
 # alice_initPubK = alice_initPK.public_key()
+# bob_initPK = generate_ec225519_private_key()
 #
 # bob_initPubK = bob_initPK.public_key()
 #

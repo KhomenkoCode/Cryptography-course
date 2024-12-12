@@ -4,31 +4,44 @@ from utils import alice_server, prompt, show, read_message_from_stdin
 from algorithms_core import *
 
 max_len = 10000
+divider = "|||"
 my_dhdr = None
 
 
 async def receive(reader):
+    global max_len
+    global divider
     """Receive data from other party"""
     while True:
         # Receive data from Bob (can be multiple messages)
-        global max_len
 
         data = await reader.read(max_len)
-        print(data.decode())
 
         if not data:
             break
 
-        # pub_key = pub_key.decode()
-        message = data.decode()
-        signature = signature.decode()
-        pub_key = create_X22519PubKey_form_str(pub_key)
+        data = data.decode()
+        # print(data)
+        data = data.split(divider)
+
+        if len(data) != 3:
+            break
+
+        encrypted_message = data[0]
+        pub_key_str = data[1]
+        signature = data[2]
+
+        # print(f"encrypted_message {encrypted_message}")
+        # print(f"pub_key {pub_key_str}")
+        # print(f"signature {signature}")
+
+        pub_key = create_X22519PubKey_form_str(pub_key_str.encode())
 
         shared_key = my_dhdr.get_input_ratchet_key(pub_key)
 
-        decrypted_message = AES_pkcs5(shared_key).decrypt(message)
+        decrypted_message = AES_pkcs5(shared_key).decrypt(encrypted_message)
 
-        if not validate_hmac_sha256(decrypted_message+pub_key,shared_key, signature):
+        if not validate_hmac_sha256(decrypted_message+pub_key_str,shared_key, signature):
             show("ERROR, signature not valid")
             break
 
@@ -41,8 +54,10 @@ async def receive(reader):
 
 
 async def send(writer):
+    global divider
     """Send data to other party"""
     while True:
+
         message = await read_message_from_stdin()
 
         # {ENCRYPT HERE}
@@ -56,9 +71,7 @@ async def send(writer):
         signature = sign_hmac_sha256(message + pub_key_str, shared_key)
 
         # Send message
-        writer.write(encrypted_message.encode())
-        writer.write(pub_key_str.encode())
-        writer.write(signature.encode())
+        writer.write(f"{encrypted_message}{divider}{pub_key_str}{divider}{signature}".encode())
         prompt()
         await writer.drain()
 
